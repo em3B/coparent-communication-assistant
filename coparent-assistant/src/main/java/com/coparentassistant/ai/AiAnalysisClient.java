@@ -2,6 +2,8 @@ package com.coparentassistant.ai;
 
 import com.coparentassistant.model.AiMessageAnalysis;
 
+import reactor.core.publisher.Mono;
+
 public interface AiAnalysisClient {
-    public AiMessageAnalysis analyzeText(String text);
+    public Mono<AiMessageAnalysis> analyzeText(String text);
 }

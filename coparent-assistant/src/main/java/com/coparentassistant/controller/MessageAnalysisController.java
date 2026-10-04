@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.ResponseEntity;
 
+import reactor.core.publisher.Mono;
+
 @RestController 
 @RequestMapping("/api/message-analysis") 
 public class MessageAnalysisController {
@@ -22,9 +24,9 @@ public class MessageAnalysisController {
     }
     
     @PostMapping
-    public ResponseEntity<AiMessageAnalysis> postMessageAnalysis(@RequestBody MessageAnalysisRequest request) {
-        AiMessageAnalysis analysis = messageAnalysisService.analyzeMessage(request.getMessage());
-        return ResponseEntity.ok(analysis);
+    public ResponseEntity<Mono<AiMessageAnalysis>> postMessageAnalysis(@RequestBody MessageAnalysisRequest request) {
+        Mono<AiMessageAnalysis> analysisMono = messageAnalysisService.analyzeMessage(request.getMessage());
+        return ResponseEntity.ok(analysisMono);
     }
     
 
