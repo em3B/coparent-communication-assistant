@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import com.coparentassistant.model.AiMessageAnalysis;
 import com.coparentassistant.ai.AiAnalysisClient;
 
+import reactor.core.publisher.Mono;
+
 @Service 
 public class MessageAnalysisService {
 
@@ -14,7 +16,7 @@ public class MessageAnalysisService {
         this.aiAnalysisClient = aiAnalysisClient;
     }
 
-    public AiMessageAnalysis analyzeMessage(String message) {
+    public Mono<AiMessageAnalysis> analyzeMessage(String message) {
         return aiAnalysisClient.analyzeText(message);
     }
 
