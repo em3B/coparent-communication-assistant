@@ -8,7 +8,7 @@ import com.coparentassistant.ai.AiAnalysisClient;
 import com.coparentassistant.model.AiMessageAnalysis;
 import com.coparentassistant.model.MessageStatus;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import reactor.core.publisher.Mono;
 
 public class MessageAnalysisServiceTest {
     private AiAnalysisClient aiAnalysisClient;
@@ -24,13 +24,19 @@ public class MessageAnalysisServiceTest {
     void analyzeMessageReturnsAiAnalysis() {
         String message = "Please send the school letter.";
 
-        AiMessageAnalysis expectedAnalysis = new AiMessageAnalysis();
-        expectedAnalysis.setStatus(MessageStatus.READY);
+        AiMessageAnalysis expectedAnalysis = AiMessageAnalysis.builder().status(MessageStatus.READY).build();
 
-        Mockito.when(aiAnalysisClient.analyzeText(message)).thenReturn(expectedAnalysis);
+        Mockito.when(aiAnalysisClient.analyzeText(message)).thenReturn(Mono.just(expectedAnalysis));
 
-        AiMessageAnalysis actualAnalysis = messageAnalysisService.analyzeMessage(message);
-        assertEquals(expectedAnalysis, actualAnalysis);
+        Mono<AiMessageAnalysis> actualAnalysis = messageAnalysisService.analyzeMessage(message);
+
+        reactor.test.StepVerifier.create(actualAnalysis)
+                .assertNext(analysis -> {
+                    org.junit.jupiter.api.Assertions.assertEquals(MessageStatus.READY, analysis.getStatus());
+                })
+                .verifyComplete();
+
         Mockito.verify(aiAnalysisClient).analyzeText(message);
     }
+
 }
