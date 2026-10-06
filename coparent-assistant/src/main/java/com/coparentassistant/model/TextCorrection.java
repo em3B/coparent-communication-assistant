@@ -1,22 +1,28 @@
 package com.coparentassistant.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.coparentassistant.model.Criteria;
-
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder    
 public class TextCorrection {
-    private final String originalText;
-
-    @Setter
-    private String correctedText;
+    
+    private String originalText; 
+ 
+    @Builder.Default
+    private List<String> suggestedCorrections = new ArrayList<>();
 
     @Setter
     private String explanation;
 
+    @Builder.Default
     private List<Criteria> criteria = new ArrayList<>();
 
     public TextCorrection(String originalText) {

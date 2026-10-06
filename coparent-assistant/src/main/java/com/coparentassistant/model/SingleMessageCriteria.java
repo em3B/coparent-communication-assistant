@@ -1,7 +1,5 @@
 package com.coparentassistant.model;
 
-import com.coparentassistant.model.Criteria;
-
 public enum SingleMessageCriteria implements Criteria {
     ACCUSATION,
     THREAT_OR_COERCION,
