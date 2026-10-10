@@ -1,5 +1,6 @@
 package com.coparentassistant.controller;
 
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
@@ -72,6 +73,54 @@ public class MessageAnalysisControllerTest {
                 .andExpect(jsonPath("$.status").value("READY"))
                 .andExpect(jsonPath("$.corrections[0].originalText")
                         .value("You should have sent it yesterday."));
+    }
+
+    @Test 
+    void testBlankMessageReturnsBadRequest() throws Exception {
+        String message = "";
+        MessageAnalysisRequest request = new MessageAnalysisRequest(message); 
+
+        mockMvc.perform(post("/api/message_analysis")
+            .contentType("application/json")
+            .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(messageAnalysisService);
+    }
+
+    @Test 
+    void testMessageExceedingMaxLengthReturnsBadRequest() throws Exception {
+
+        String message = "a".repeat(501);
+
+        MessageAnalysisRequest request = new MessageAnalysisRequest(message);
+
+        mockMvc.perform(post("/api/message_analysis")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(messageAnalysisService);
+    }
+
+    @Test
+    void testNullMessageReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/message_analysis")
+                .contentType("application/json")
+                .content("{\"message\": null}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(messageAnalysisService);
+    }
+
+    @Test
+    void testWhitespaceOnlyMessageReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/message_analysis")
+                .contentType("application/json")
+                .content("{\"message\": \"   \"}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(messageAnalysisService);
     }
 
 }

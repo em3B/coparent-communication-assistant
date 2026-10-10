@@ -7,6 +7,8 @@ import com.coparentassistant.model.AiMessageAnalysis;
 import com.coparentassistant.dto.MessageAnalysisRequest;
 import com.coparentassistant.service.MessageAnalysisService;
 
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -23,7 +25,7 @@ public class MessageAnalysisController {
     }
     
     @PostMapping
-    public Mono<AiMessageAnalysis> postMessageAnalysis(@RequestBody MessageAnalysisRequest request) {
+    public Mono<AiMessageAnalysis> postMessageAnalysis(@RequestBody @Valid  MessageAnalysisRequest request) {
         return messageAnalysisService.analyzeMessage(request.getMessage());
     }
     
