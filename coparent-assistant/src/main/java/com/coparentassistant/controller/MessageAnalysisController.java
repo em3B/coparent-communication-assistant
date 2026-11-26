@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import reactor.core.publisher.Mono;
+import java.time.Instant;
+import java.util.UUID;
+
+import com.coparentassistant.model.Metadata;
 
 @RestController 
 @RequestMapping("/api/message_analysis") 
@@ -26,7 +30,9 @@ public class MessageAnalysisController {
     
     @PostMapping
     public Mono<AiMessageAnalysis> postMessageAnalysis(@RequestBody @Valid  MessageAnalysisRequest request) {
-        return messageAnalysisService.analyzeMessage(request.getMessage());
+
+        Metadata metadata = new Metadata(UUID.randomUUID(), Instant.now());
+        return messageAnalysisService.analyzeMessage(request.getMessage(), metadata);
     }
     
 
