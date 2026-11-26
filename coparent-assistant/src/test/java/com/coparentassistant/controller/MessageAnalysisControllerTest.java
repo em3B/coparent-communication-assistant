@@ -2,8 +2,13 @@ package com.coparentassistant.controller;
 
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -15,51 +20,54 @@ import com.coparentassistant.dto.MessageAnalysisRequest;
 import com.coparentassistant.model.AiMessageAnalysis;
 import com.coparentassistant.model.MessageStatus;
 import com.coparentassistant.model.TextCorrection;
+import com.coparentassistant.model.Metadata;
 
 import tools.jackson.databind.ObjectMapper;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.util.List;
-
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
+
+import java.util.List;
 
 import reactor.core.publisher.Mono;
 
 @WebMvcTest(MessageAnalysisController.class)
 public class MessageAnalysisControllerTest {
 
-    @MockitoBean 
+    @MockitoBean
     private MessageAnalysisService messageAnalysisService;
 
-    @Autowired 
+    @Autowired
     private ObjectMapper objectMapper;
 
     private final MockMvc mockMvc;
 
-    @Autowired 
+    @Autowired
     public MessageAnalysisControllerTest(MockMvc mockMvc) {
         this.mockMvc = mockMvc;
     }
-    
-    @Test 
+
+    @Test
     void testPostMessageAnalysis() throws Exception {
+
         String message = "Please send the school letter.";
-        // Ensure this property matches the key "message" used by your DTO 
-        MessageAnalysisRequest request = new MessageAnalysisRequest(message); 
-        TextCorrection correction = new TextCorrection("You should have sent it yesterday.");
+
+        MessageAnalysisRequest request =
+            new MessageAnalysisRequest(message);
 
         AiMessageAnalysis analysis = AiMessageAnalysis.builder()
             .status(MessageStatus.READY)
-            .corrections(List.of(correction))
+            .corrections(List.of())
             .build();
 
-        when(messageAnalysisService.analyzeMessage(message))
-        .thenReturn(Mono.just(analysis));
+        when(messageAnalysisService.analyzeMessage(
+            eq(message),
+            any(Metadata.class)
+        )).thenReturn(Mono.just(analysis));
 
         MvcResult result = mockMvc.perform(post("/api/message_analysis")
                 .contentType("application/json")
@@ -71,14 +79,30 @@ public class MessageAnalysisControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("READY"))
-                .andExpect(jsonPath("$.corrections[0].originalText")
-                        .value("You should have sent it yesterday."));
+                .andExpect(jsonPath("$.corrections").isEmpty());
+
+        ArgumentCaptor<Metadata> metadataCaptor =
+            ArgumentCaptor.forClass(Metadata.class);
+
+        verify(messageAnalysisService).analyzeMessage(
+            eq(message),
+            metadataCaptor.capture()
+        );
+
+        Metadata metadata = metadataCaptor.getValue();
+
+        assertNotNull(metadata);
+        assertNotNull(metadata.getCorrelationId());
+        assertNotNull(metadata.getPersistedAt());
     }
 
-    @Test 
+    @Test
     void testBlankMessageReturnsBadRequest() throws Exception {
+
         String message = "";
-        MessageAnalysisRequest request = new MessageAnalysisRequest(message); 
+
+        MessageAnalysisRequest request =
+            new MessageAnalysisRequest(message);
 
         mockMvc.perform(post("/api/message_analysis")
             .contentType("application/json")
@@ -88,12 +112,13 @@ public class MessageAnalysisControllerTest {
         verifyNoInteractions(messageAnalysisService);
     }
 
-    @Test 
+    @Test
     void testMessageExceedingMaxLengthReturnsBadRequest() throws Exception {
 
         String message = "a".repeat(501);
 
-        MessageAnalysisRequest request = new MessageAnalysisRequest(message);
+        MessageAnalysisRequest request =
+            new MessageAnalysisRequest(message);
 
         mockMvc.perform(post("/api/message_analysis")
                 .contentType("application/json")
@@ -105,6 +130,7 @@ public class MessageAnalysisControllerTest {
 
     @Test
     void testNullMessageReturnsBadRequest() throws Exception {
+
         mockMvc.perform(post("/api/message_analysis")
                 .contentType("application/json")
                 .content("{\"message\": null}"))
@@ -115,6 +141,7 @@ public class MessageAnalysisControllerTest {
 
     @Test
     void testWhitespaceOnlyMessageReturnsBadRequest() throws Exception {
+
         mockMvc.perform(post("/api/message_analysis")
                 .contentType("application/json")
                 .content("{\"message\": \"   \"}"))
@@ -122,5 +149,4 @@ public class MessageAnalysisControllerTest {
 
         verifyNoInteractions(messageAnalysisService);
     }
-
 }

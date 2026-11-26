@@ -7,6 +7,8 @@ import com.coparentassistant.ai.AiAnalysisClient;
 
 import reactor.core.publisher.Mono;
 
+import com.coparentassistant.model.Metadata;
+
 @Service 
 public class MessageAnalysisService {
 
@@ -16,8 +18,8 @@ public class MessageAnalysisService {
         this.aiAnalysisClient = aiAnalysisClient;
     }
 
-    public Mono<AiMessageAnalysis> analyzeMessage(String message) {
-        return aiAnalysisClient.analyzeText(message);
+    public Mono<AiMessageAnalysis> analyzeMessage(String message, Metadata metadata) {
+        return aiAnalysisClient.analyzeText(message, metadata);
     }
 
 }
