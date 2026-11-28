@@ -15,11 +15,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import reactor.core.publisher.Mono;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 
 import com.coparentassistant.model.Metadata;
 
 @RestController 
 @RequestMapping("/api/message_analysis") 
+@Slf4j
 public class MessageAnalysisController {
     
     private final MessageAnalysisService messageAnalysisService;
@@ -32,6 +34,11 @@ public class MessageAnalysisController {
     public Mono<AiMessageAnalysis> postMessageAnalysis(@RequestBody @Valid  MessageAnalysisRequest request) {
 
         Metadata metadata = new Metadata(UUID.randomUUID(), Instant.now());
+
+        log.atInfo()
+            .addKeyValue("correlationId", metadata.getCorrelationId())
+            .log("Message analysis request received");
+            
         return messageAnalysisService.analyzeMessage(request.getMessage(), metadata);
     }
     
