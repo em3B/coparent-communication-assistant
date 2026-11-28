@@ -26,6 +26,7 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.List;
@@ -33,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @Component
+@Slf4j
 public class OpenAiAnalysisClient implements AiAnalysisClient {
 
     private final WebClient webClient;
@@ -229,6 +231,21 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
             .retryWhen(Retry.backoff(5, Duration.ofSeconds(3))
                 .jitter(0.75)
                 .filter(this::isRetryableException)
+                .doBeforeRetry(retrySignal -> {
+
+                    Throwable failure = retrySignal.failure();
+
+                    var logEvent = log.atWarn()
+                        .addKeyValue("correlationId", metadata.getCorrelationId())
+                        .addKeyValue("retryAttempt", retrySignal.totalRetries() + 1)
+                        .addKeyValue("exceptionType", failure.getClass().getSimpleName());
+
+                    if (failure instanceof WebClientResponseException ex) {
+                        logEvent.addKeyValue("providerStatusCode", ex.getStatusCode().value());
+                    }
+
+                    logEvent.log("Retrying OpenAI request due to transient error");
+                })
                 .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) ->
                     new AiProviderException(
                         "Failed to get analysis from OpenAI after retries",
